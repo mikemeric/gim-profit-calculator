@@ -2,6 +2,7 @@ import streamlit as st
 import plotly.graph_objects as go
 from dataclasses import dataclass
 from typing import Dict
+import requests  # NOUVEAU : Pour envoyer les données à Google
 
 # ==========================================
 # 1. CONFIGURATION "MAXIMUM BEAUTY" (ZARA V6)
@@ -16,88 +17,45 @@ st.set_page_config(
 # Injection CSS LUXE & LISIBILITÉ
 st.markdown("""
 <style>
-    /* --- FOND & AMBIANCE --- */
-    .stApp {
-        background-color: #0B0F19; /* Noir bleuté très profond (Premium) */
-        color: #E6E6E6;
-    }
-
-    /* --- SIDEBAR (LISIBILITÉ TOTALE) --- */
-    section[data-testid="stSidebar"] {
-        background-color: #11151F; /* Légèrement plus clair que le fond */
-        border-right: 1px solid #2B3345; /* Séparation subtile */
-    }
-    
-    /* Force TOUS les textes de la sidebar en blanc/gris clair */
+    .stApp { background-color: #0B0F19; color: #E6E6E6; }
+    section[data-testid="stSidebar"] { background-color: #11151F; border-right: 1px solid #2B3345; }
     section[data-testid="stSidebar"] .stMarkdown p, 
     section[data-testid="stSidebar"] label, 
     section[data-testid="stSidebar"] .stCaption, 
-    section[data-testid="stSidebar"] small {
-        color: #E0E6ED !important; /* Blanc froid très lisible */
-        font-weight: 500; /* Un peu plus gras pour la lisibilité */
-    }
-    
-    /* Titres des expanders en sidebar */
-    section[data-testid="stSidebar"] .streamlit-expanderHeader {
-        color: #FFFFFF !important;
-        font-weight: bold;
-        background-color: #1A202C;
-        border-radius: 5px;
-        margin-bottom: 5px;
-    }
-
-    /* --- UI ELEMENTS (BOUTONS & INPUTS) --- */
-    /* Inputs (Champs de texte) */
-    .stNumberInput input, .stTextInput input {
-        background-color: #0B0F19;
-        color: #FFFFFF;
-        border: 1px solid #4A5568;
-        border-radius: 6px;
-    }
-    
-    /* Boutons Primaires (Gradients) */
-    div.stButton > button[kind="primary"] {
-        background: linear-gradient(90deg, #FF4B4B 0%, #FF0000 100%);
-        border: none;
-        color: white;
-        font-weight: bold;
-        box-shadow: 0 4px 14px 0 rgba(255, 75, 75, 0.39);
-        transition: all 0.2s ease-in-out;
-    }
-    div.stButton > button[kind="primary"]:hover {
-        transform: scale(1.02);
-        box-shadow: 0 6px 20px 0 rgba(255, 75, 75, 0.29);
-    }
-    
-    /* Boutons Secondaires (Sidebar) */
-    section[data-testid="stSidebar"] button {
-        background-color: #2D3748;
-        color: white;
-        border: 1px solid #4A5568;
-    }
-
-    /* --- ALERTS & CARDS --- */
-    .stAlert {
-        background-color: #1A202C;
-        color: #E2E8F0;
-        border: 1px solid #2D3748;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-
-    /* --- HACK MENU INVISIBLE --- */
-    header[data-testid="stHeader"] {
-        background-color: transparent;
-    }
-
-    /* --- METRICS (COMPTEURS) --- */
-    div[data-testid="stMetricValue"] {
-        text-shadow: 0 0 10px rgba(255,255,255,0.1); /* Petit effet néon */
-    }
+    section[data-testid="stSidebar"] small { color: #E0E6ED !important; font-weight: 500; }
+    section[data-testid="stSidebar"] .streamlit-expanderHeader { color: #FFFFFF !important; font-weight: bold; background-color: #1A202C; border-radius: 5px; margin-bottom: 5px; }
+    .stNumberInput input, .stTextInput input { background-color: #0B0F19; color: #FFFFFF; border: 1px solid #4A5568; border-radius: 6px; }
+    div.stButton > button[kind="primary"] { background: linear-gradient(90deg, #FF4B4B 0%, #FF0000 100%); border: none; color: white; font-weight: bold; box-shadow: 0 4px 14px 0 rgba(255, 75, 75, 0.39); transition: all 0.2s ease-in-out; }
+    div.stButton > button[kind="primary"]:hover { transform: scale(1.02); box-shadow: 0 6px 20px 0 rgba(255, 75, 75, 0.29); }
+    section[data-testid="stSidebar"] button { background-color: #2D3748; color: white; border: 1px solid #4A5568; }
+    .stAlert { background-color: #1A202C; color: #E2E8F0; border: 1px solid #2D3748; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    header[data-testid="stHeader"] { background-color: transparent; }
+    div[data-testid="stMetricValue"] { text-shadow: 0 0 10px rgba(255,255,255,0.1); }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. LOGIQUE MÉTIER (MARCUS - INCHANGÉE)
+# 2. MODULE BACKEND : GESTION DES LEADS (AXEL)
+# ==========================================
+def save_lead_to_google(email):
+    # URL de soumission construite à partir de votre lien d'édition
+    FORM_URL = "https://docs.google.com/forms/d/1FvwZlm9TR54PDuL_Gv4JczPNAoz8kg7xsKHGYcpwL3Y/formResponse"
+    
+    # Vos IDs spécifiques
+    FORM_DATA = {
+        "entry.436351499": email,           # Champ Email
+        "entry.1648052779": "App Simulateur TCO" # Champ Source
+    }
+    
+    try:
+        # Envoi discret (sans ouvrir de fenêtre)
+        response = requests.post(FORM_URL, data=FORM_DATA)
+        return response.status_code == 200
+    except:
+        return False
+
+# ==========================================
+# 3. LOGIQUE MÉTIER (MARCUS)
 # ==========================================
 
 def format_fcfa(montant):
@@ -145,7 +103,7 @@ def calculer_tco_expert(params: ScenarioParams) -> Dict:
         facteur_inflation = (1 + params.taux_inflation) ** annee
         facteur_wacc = (1 + params.taux_actualisation) ** annee
         
-        # LOGIQUE MARCUS (USURE ACCÉLÉRÉE)
+        # LOGIQUE MARCUS
         facteur_risque = (1 + params.facteur_usure_old) ** (annee - 1)
         
         # SCENARIO A : VIEUX
@@ -193,13 +151,13 @@ def calculer_tco_expert(params: ScenarioParams) -> Dict:
     }
 
 # ==========================================
-# 3. SIDEBAR (STRATÉGIE IDRISS + SOFIA)
+# 4. SIDEBAR (STRATÉGIE IDRISS + SOFIA)
 # ==========================================
 
 st.sidebar.title("💎 GIM-PROFIT")
-st.sidebar.caption("v6.0 Ultimate Edition")
+st.sidebar.caption("v7.0 Connected Edition")
 
-# --- CAPTURE DE LEAD (Design Card) ---
+# --- CAPTURE DE LEAD (INTELLIGENTE) ---
 with st.sidebar.container():
     st.sidebar.markdown(
         """
@@ -215,10 +173,17 @@ with st.sidebar.container():
     email_sidebar = st.sidebar.text_input("Email professionnel", key="email_sidebar", placeholder="dg@usine.cm")
     rgpd = st.sidebar.checkbox("Consentement RGPD / APM", help="Nous ne spammons jamais.")
     
+    # BOUTON CONNECTÉ À GOOGLE SHEETS
     if st.sidebar.button("✨ GÉNÉRER MON RAPPORT", type="primary"):
         if "@" in email_sidebar and "." in email_sidebar and rgpd:
-            st.sidebar.success("Rapport envoyé au siège !")
-            st.balloons()
+            with st.spinner("Analyse en cours..."):
+                # Envoi des données à Google
+                success = save_lead_to_google(email_sidebar)
+                if success:
+                    st.sidebar.success("✅ Rapport envoyé ! Surveillez vos emails.")
+                    st.balloons()
+                else:
+                    st.sidebar.error("Erreur de connexion. Réessayez.")
         elif not rgpd:
             st.sidebar.warning("Cochez la case RGPD.")
         else:
@@ -259,7 +224,7 @@ with st.sidebar.expander("4️⃣ MACRO-ÉCONOMIE", expanded=False):
     taux_inflation = st.slider("Inflation %", 0, 10, 3) / 100
 
 # ==========================================
-# 4. DASHBOARD DE RÉSULTATS (ZARA)
+# 5. DASHBOARD DE RÉSULTATS (ZARA)
 # ==========================================
 
 st.title("GIM-PROFIT CALCULATOR")
