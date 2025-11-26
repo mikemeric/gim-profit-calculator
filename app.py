@@ -2,10 +2,10 @@ import streamlit as st
 import plotly.graph_objects as go
 from dataclasses import dataclass
 from typing import Dict
-import requests  # NOUVEAU : Pour envoyer les données à Google
+import requests  # Indispensable pour l'envoi Google
 
 # ==========================================
-# 1. CONFIGURATION "MAXIMUM BEAUTY" (ZARA V6)
+# 1. CONFIGURATION "MAXIMUM BEAUTY" (ZARA)
 # ==========================================
 st.set_page_config(
     page_title="GIM-PROFIT Calculator",
@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Injection CSS LUXE & LISIBILITÉ
+# Injection CSS LUXE
 st.markdown("""
 <style>
     .stApp { background-color: #0B0F19; color: #E6E6E6; }
@@ -35,26 +35,23 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. MODULE BACKEND : GESTION DES LEADS (AXEL)
+# 2. MODULE BACKEND : GESTION DES LEADS (CORRIGÉ V8)
 # ==========================================
-# REMPLACEZ LA FONCTION save_lead_to_google PAR CECI TEMPORAIREMENT :
-
 def save_lead_to_google(email):
-    FORM_URL = "https://docs.google.com/forms/d/1FvwZlm9TR54PDuL_Gv4JczPNAoz8kg7xsKHGYcpwL3Y/formResponse"
+    # URL PUBLIQUE (Avec /formResponse à la fin)
+    FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScalgK_-qZw0RcETjg0Dv6hKBR09TlqvqKOEptgfUFUON0fYA/formResponse"
+    
+    # IDs validés par le lien pré-rempli
     FORM_DATA = {
         "entry.436351499": email,
         "entry.1648052779": "App Simulateur TCO"
     }
     
     try:
+        # Envoi des données
         response = requests.post(FORM_URL, data=FORM_DATA)
-        # 👇 MODE DEBUG : Si ça rate, on affiche pourquoi
-        if response.status_code != 200:
-            st.sidebar.error(f"Erreur Google: {response.status_code}")
-            return False
-        return True
-    except Exception as e:
-        st.sidebar.error(f"Erreur Python: {e}")
+        return response.status_code == 200
+    except:
         return False
 
 # ==========================================
@@ -154,13 +151,13 @@ def calculer_tco_expert(params: ScenarioParams) -> Dict:
     }
 
 # ==========================================
-# 4. SIDEBAR (STRATÉGIE IDRISS + SOFIA)
+# 4. SIDEBAR (CAPTURE & PARAMÈTRES)
 # ==========================================
 
 st.sidebar.title("💎 GIM-PROFIT")
-st.sidebar.caption("v7.0 Connected Edition")
+st.sidebar.caption("v8.0 Connected Edition")
 
-# --- CAPTURE DE LEAD (INTELLIGENTE) ---
+# --- CAPTURE DE LEAD ---
 with st.sidebar.container():
     st.sidebar.markdown(
         """
@@ -176,17 +173,16 @@ with st.sidebar.container():
     email_sidebar = st.sidebar.text_input("Email professionnel", key="email_sidebar", placeholder="dg@usine.cm")
     rgpd = st.sidebar.checkbox("Consentement RGPD / APM", help="Nous ne spammons jamais.")
     
-    # BOUTON CONNECTÉ À GOOGLE SHEETS
+    # BOUTON D'ACTION
     if st.sidebar.button("✨ GÉNÉRER MON RAPPORT", type="primary"):
         if "@" in email_sidebar and "." in email_sidebar and rgpd:
-            with st.spinner("Analyse en cours..."):
-                # Envoi des données à Google
+            with st.spinner("Connexion au serveur sécurisé..."):
                 success = save_lead_to_google(email_sidebar)
                 if success:
-                    st.sidebar.success("✅ Rapport envoyé ! Surveillez vos emails.")
+                    st.sidebar.success("✅ Rapport en cours d'envoi !")
                     st.balloons()
                 else:
-                    st.sidebar.error("Erreur de connexion. Réessayez.")
+                    st.sidebar.error("Erreur de réseau. Réessayez.")
         elif not rgpd:
             st.sidebar.warning("Cochez la case RGPD.")
         else:
@@ -194,7 +190,7 @@ with st.sidebar.container():
     
     st.sidebar.markdown("<hr style='border-color: #2D3748;'>", unsafe_allow_html=True)
 
-# PARAMÈTRES TECHNIQUES
+# PARAMÈTRES
 st.sidebar.markdown("### ⚙️ PARAMÈTRES")
 
 with st.sidebar.expander("1️⃣ ÉQUIPEMENT ACTUEL", expanded=True):
@@ -202,7 +198,6 @@ with st.sidebar.expander("1️⃣ ÉQUIPEMENT ACTUEL", expanded=True):
     energie_old = st.number_input("Coût Énergie Annuel (FCFA)", value=800_000, step=100_000, format="%d")
     nb_pannes_old = st.number_input("Fréquence Pannes/an", value=8, step=1)
     mttr_old = st.number_input("MTTR (Heures)", value=4.0, step=0.5)
-    
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<b style='color:#FF4B4B'>🔥 Facteur d'Usure (Weibull)</b>", unsafe_allow_html=True)
     facteur_usure = st.slider("Accélération pannes (%)", 0, 30, 15) / 100
@@ -216,10 +211,7 @@ with st.sidebar.expander("2️⃣ PROJET NEUF", expanded=False):
     mttr_new = st.number_input("MTTR Neuf (H)", value=1.0, step=0.5)
 
 with st.sidebar.expander("3️⃣ IMPACT FINANCIER", expanded=True):
-    cout_arret_horaire = st.number_input(
-        "Perte Marge / Heure (FCFA)", 
-        value=25_000, step=5_000, format="%d"
-    )
+    cout_arret_horaire = st.number_input("Perte Marge / Heure (FCFA)", value=25_000, step=5_000, format="%d")
 
 with st.sidebar.expander("4️⃣ MACRO-ÉCONOMIE", expanded=False):
     duree_etude = st.number_input("Horizon (années)", value=7, min_value=3, max_value=15)
@@ -227,13 +219,12 @@ with st.sidebar.expander("4️⃣ MACRO-ÉCONOMIE", expanded=False):
     taux_inflation = st.slider("Inflation %", 0, 10, 3) / 100
 
 # ==========================================
-# 5. DASHBOARD DE RÉSULTATS (ZARA)
+# 5. DASHBOARD (ZARA)
 # ==========================================
 
 st.title("GIM-PROFIT CALCULATOR")
 st.markdown("<h3 style='color: #718096; font-weight: normal; margin-top:-15px;'>Intelligence Financière pour la Maintenance Industrielle</h3>", unsafe_allow_html=True)
 
-# Calcul
 params = ScenarioParams(
     duree_etude=duree_etude, taux_actualisation=taux_actualisation, taux_inflation=taux_inflation,
     cout_arret_horaire=cout_arret_horaire, maint_old_annuel=maint_old, energie_old_annuel=energie_old,
@@ -245,111 +236,47 @@ res = calculer_tco_expert(params)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# --- CARTES KPI (Style Néon) ---
+# KPIs
 col1, col2, col3 = st.columns(3)
-
 with col1:
-    st.markdown("""
-    <div style="background-color: #1A202C; padding: 20px; border-radius: 10px; border: 1px solid #2D3748; text-align: center;">
-        <p style="color: #A0AEC0; font-size: 14px; margin:0;">RENTABILITÉ (ROI)</p>
-        <h1 style="color: #48BB78; font-size: 42px; margin:0; text-shadow: 0 0 10px rgba(72,187,120,0.3);">
-            {}
-        </h1>
-    </div>
-    """.format(f"AN {res['break_even_year']}" if res['break_even_year'] else "JAMAIS"), unsafe_allow_html=True)
-
+    st.markdown(f"""<div style="background-color: #1A202C; padding: 20px; border-radius: 10px; border: 1px solid #2D3748; text-align: center;"><p style="color: #A0AEC0; font-size: 14px; margin:0;">RENTABILITÉ (ROI)</p><h1 style="color: #48BB78; font-size: 42px; margin:0; text-shadow: 0 0 10px rgba(72,187,120,0.3);">{f"AN {res['break_even_year']}" if res['break_even_year'] else "JAMAIS"}</h1></div>""", unsafe_allow_html=True)
 with col2:
     gain = res['total_savings']
     color = "#48BB78" if gain > 0 else "#F56565"
-    st.markdown(f"""
-    <div style="background-color: #1A202C; padding: 20px; border-radius: 10px; border: 1px solid #2D3748; text-align: center;">
-        <p style="color: #A0AEC0; font-size: 14px; margin:0;">CASH FLOW SAUVÉ</p>
-        <h1 style="color: {color}; font-size: 42px; margin:0; text-shadow: 0 0 10px {color}44;">
-            {format_fcfa(gain)}
-        </h1>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown(f"""<div style="background-color: #1A202C; padding: 20px; border-radius: 10px; border: 1px solid #2D3748; text-align: center;"><p style="color: #A0AEC0; font-size: 14px; margin:0;">CASH FLOW SAUVÉ</p><h1 style="color: {color}; font-size: 42px; margin:0; text-shadow: 0 0 10px {color}44;">{format_fcfa(gain)}</h1></div>""", unsafe_allow_html=True)
 with col3:
     h_perdues = res['heures_perdues_old_final']
-    st.markdown(f"""
-    <div style="background-color: #1A202C; padding: 20px; border-radius: 10px; border: 1px solid #2D3748; text-align: center;">
-        <p style="color: #A0AEC0; font-size: 14px; margin:0;">RISQUE PANNE (FIN)</p>
-        <h1 style="color: #F56565; font-size: 42px; margin:0; text-shadow: 0 0 10px rgba(245,101,101,0.3);">
-            {h_perdues:.0f} h
-        </h1>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div style="background-color: #1A202C; padding: 20px; border-radius: 10px; border: 1px solid #2D3748; text-align: center;"><p style="color: #A0AEC0; font-size: 14px; margin:0;">RISQUE PANNE (FIN)</p><h1 style="color: #F56565; font-size: 42px; margin:0; text-shadow: 0 0 10px rgba(245,101,101,0.3);">{h_perdues:.0f} h</h1></div>""", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# --- ALERTE MARCUS (Card Style) ---
+# ALERTE
 perte_totale = res['perte_prod_old_total']
 ratio = perte_totale / params.capex_new
-
 if ratio > 1.0:
-    st.markdown(f"""
-    <div style="background-color: #2C1A1A; border-left: 5px solid #F56565; padding: 20px; border-radius: 5px;">
-        <h3 style="color: #F56565; margin-top:0;">🚨 DIAGNOSTIC CRITIQUE</h3>
-        <p style="color: #E2E8F0; font-size: 16px;">Le maintien de l'équipement est une aberration financière. 
-        Les pertes cumulées (<b>{format_fcfa_complete(perte_totale)} FCFA</b>) dépassent <b>{ratio:.1f}x</b> le prix du neuf.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div style="background-color: #2C1A1A; border-left: 5px solid #F56565; padding: 20px; border-radius: 5px;"><h3 style="color: #F56565; margin-top:0;">🚨 DIAGNOSTIC CRITIQUE</h3><p style="color: #E2E8F0; font-size: 16px;">Le maintien de l'équipement est une aberration financière. Les pertes cumulées (<b>{format_fcfa_complete(perte_totale)} FCFA</b>) dépassent <b>{ratio:.1f}x</b> le prix du neuf.</p></div>""", unsafe_allow_html=True)
 elif ratio > 0.5:
-    st.warning(f"⚠️ **ATTENTION :** Vos pannes commencent à coûter très cher ({format_fcfa_complete(perte_totale)} FCFA). Préparez le remplacement.")
+    st.warning(f"⚠️ **ATTENTION :** Vos pannes coûtent cher ({format_fcfa_complete(perte_totale)} FCFA).")
 else:
-    st.success("✅ **SITUATION STABLE :** L'équipement actuel est encore économiquement viable.")
+    st.success("✅ **SITUATION STABLE :** Équipement viable.")
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-# --- GRAPHIQUES AVANCÉS ---
-tab1, tab2 = st.tabs(["📊 PROJECTION TCO (LCC)", "🔥 EXPLOSION DU RISQUE"])
-
+# GRAPHIQUES
+tab1, tab2 = st.tabs(["📊 PROJECTION TCO", "🔥 RISQUE"])
 with tab1:
     fig = go.Figure()
     annees = list(range(0, params.duree_etude + 1))
-    fig.add_trace(go.Scatter(x=annees, y=res['cumul_old'], mode='lines', name='Maintien Existant (Risque)', line=dict(color='#F56565', width=4, shape='spline')))
-    fig.add_trace(go.Scatter(x=annees, y=res['cumul_new'], mode='lines', name='Investissement Neuf', line=dict(color='#48BB78', width=4, shape='spline')))
-    
-    if res['break_even_year']:
-        fig.add_vline(x=res['break_even_year'], line_dash="dot", line_color="white", annotation_text="Rentabilité")
-
-    fig.update_layout(
-        plot_bgcolor='#0B0F19', paper_bgcolor='#0B0F19',
-        font=dict(color='#A0AEC0'),
-        xaxis=dict(showgrid=True, gridcolor='#2D3748'),
-        yaxis=dict(showgrid=True, gridcolor='#2D3748', title="Coût Cumulé (FCFA)"),
-        margin=dict(l=20, r=20, t=30, b=20),
-        height=450,
-        legend=dict(orientation="h", y=1.1)
-    )
+    fig.add_trace(go.Scatter(x=annees, y=res['cumul_old'], mode='lines', name='Maintien Existant', line=dict(color='#F56565', width=4)))
+    fig.add_trace(go.Scatter(x=annees, y=res['cumul_new'], mode='lines', name='Investissement Neuf', line=dict(color='#48BB78', width=4)))
+    if res['break_even_year']: fig.add_vline(x=res['break_even_year'], line_dash="dot", line_color="white")
+    fig.update_layout(plot_bgcolor='#0B0F19', paper_bgcolor='#0B0F19', font=dict(color='#A0AEC0'), xaxis=dict(gridcolor='#2D3748'), yaxis=dict(gridcolor='#2D3748'), margin=dict(l=20, r=20, t=30, b=20), height=450, legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
-
 with tab2:
     fig2 = go.Figure()
     x_axis = list(range(1, params.duree_etude + 1))
-    fig2.add_trace(go.Bar(x=x_axis, y=res['historique_arrets_old'], name='Indisponibilité Existant (h)', marker_color='#F56565'))
-    fig2.add_trace(go.Bar(x=x_axis, y=res['historique_arrets_new'], name='Indisponibilité Neuf (h)', marker_color='#48BB78'))
-    
-    fig2.update_layout(
-        plot_bgcolor='#0B0F19', paper_bgcolor='#0B0F19',
-        font=dict(color='#A0AEC0'),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(showgrid=True, gridcolor='#2D3748', title="Heures d'arrêt / an"),
-        margin=dict(l=20, r=20, t=30, b=20),
-        height=450,
-        legend=dict(orientation="h", y=1.1)
-    )
+    fig2.add_trace(go.Bar(x=x_axis, y=res['historique_arrets_old'], name='Indisp. Existant', marker_color='#F56565'))
+    fig2.add_trace(go.Bar(x=x_axis, y=res['historique_arrets_new'], name='Indisp. Neuf', marker_color='#48BB78'))
+    fig2.update_layout(plot_bgcolor='#0B0F19', paper_bgcolor='#0B0F19', font=dict(color='#A0AEC0'), xaxis=dict(showgrid=False), yaxis=dict(gridcolor='#2D3748'), margin=dict(l=20, r=20, t=30, b=20), height=450, legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig2, use_container_width=True)
 
-# --- FOOTER ---
 st.markdown("---")
-st.markdown(
-    """
-    <div style='text-align: center; color: #718096; font-family: monospace;'>
-        <small>CERTIFIÉ PAR L'ACADÉMIE PANAFRICAINE DE MAINTENANCE (APM) © 2025</small><br>
-        <small>SECURE SERVER | ISO-27001 COMPLIANT</small>
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
+st.markdown("<div style='text-align: center; color: #718096; font-family: monospace;'><small>CERTIFIÉ PAR L'ACADÉMIE PANAFRICAINE DE MAINTENANCE (APM) © 2025</small></div>", unsafe_allow_html=True)
