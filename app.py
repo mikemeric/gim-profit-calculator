@@ -37,21 +37,24 @@ st.markdown("""
 # ==========================================
 # 2. MODULE BACKEND : GESTION DES LEADS (AXEL)
 # ==========================================
+# REMPLACEZ LA FONCTION save_lead_to_google PAR CECI TEMPORAIREMENT :
+
 def save_lead_to_google(email):
-    # URL de soumission construite à partir de votre lien d'édition
     FORM_URL = "https://docs.google.com/forms/d/1FvwZlm9TR54PDuL_Gv4JczPNAoz8kg7xsKHGYcpwL3Y/formResponse"
-    
-    # Vos IDs spécifiques
     FORM_DATA = {
-        "entry.436351499": email,           # Champ Email
-        "entry.1648052779": "App Simulateur TCO" # Champ Source
+        "entry.436351499": email,
+        "entry.1648052779": "App Simulateur TCO"
     }
     
     try:
-        # Envoi discret (sans ouvrir de fenêtre)
         response = requests.post(FORM_URL, data=FORM_DATA)
-        return response.status_code == 200
-    except:
+        # 👇 MODE DEBUG : Si ça rate, on affiche pourquoi
+        if response.status_code != 200:
+            st.sidebar.error(f"Erreur Google: {response.status_code}")
+            return False
+        return True
+    except Exception as e:
+        st.sidebar.error(f"Erreur Python: {e}")
         return False
 
 # ==========================================
